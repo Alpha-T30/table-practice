@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Advanced Table Practice</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    padding: 20px;
+}
+.container {
+    max-width: 850px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+}
+h2 { text-align: center; }
+
+.controls {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  
+}
+.controls label {
+    font-size: 12px;
+    color: #555;
+}
+.controls select,
+.controls input,
+button {
+    padding: 8px;
+    font-size: 14px;
+}
+
+.full {
+    grid-column: span 2;
+}
+
+.multi-box {
+    border: 1px solid #ccc;
+    padding: 12px;       /* more padding for gaps */
+    max-height: 140px;
+    overflow-y: auto;
+    margin-bottom: 12px; /* gap below the box */
+}
+
+.multi-box label {
+    display: inline-block;
+    width: auto;         /* let label expand naturally */
+    margin-right: 12px;  /* horizontal gap between checkboxes */
+    margin-bottom: 6px;  /* vertical gap if wrapped */
+}
+
+
+.question {
+    background: #eef;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 6px;
+}
+
+.answer-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.answer-row input {
+    width: 60px;
+    text-align: center;
+}
+
+.result.correct { color: green; }
+.result.wrong { color: red; }
+
+.small {
+    font-size: 12px;
+    color: #555;
+}
+.answer-row input,
+.answer-row button {
+    height: 36px;          
+    padding: 6px 8px;      
+    font-size: 14px;
+    box-sizing: border-box;
+}
+.answer-row span {
+    line-height: 36px;
+    font-weight: bold;
+}
+.answer-row .row-label {
+    font-size: 12px;
+    color: #555;
+    margin-right: 4px;
+}
+#mulSelect{
+margin-top : 8px ; }
+</style>
+</head>
+
+<body>
+<div class="container">
+<h2>Multiplication Table Practice</h2>
+
+<div class="controls">
+
+    <label for="tableStart">Table Start (first table number)</label>
+    <input id="tableStart" type="number" placeholder="Table start">
+
+    <label for="tableEnd">Table End (optional, last table number)</label>
+    <input id="tableEnd" type="number" placeholder="Table end (optional)">
+
+    <label for="mulStart">Multiplier Start</label>
+    <input id="mulStart" type="number" placeholder="Multiply from">
+
+    <label for="mulEnd">Multiplier End</label>
+    <input id="mulEnd" type="number" placeholder="Multiply to">
+
+    <label for="modeSelect">Mode</label>
+    <select id="modeSelect">
+        <option value="random">Random</option>
+        <option value="sequential">Sequential</option>
+    </select>
+
+    <label for="duplicationSelect">Duplication</label>
+    <select id="duplicationSelect">
+        <option value="allow">Allow duplication</option>
+        <option value="no">No duplication</option>
+    </select>
+
+    <label for="multiModeSelect">Multiple Combinations</label>
+    <select id="multiModeSelect">
+        <option value="off">OFF</option>
+        <option value="on">ON</option>
+    </select>
+
+    <label for="countInput">Number of Questions</label>
+    <input id="countInput" type="number" placeholder="How many numbers" value="1">
+
+    <div class="multi-box full">
+        <label>Select Multipliers (optional)</label><br>
+        <button type="button" onclick="selectAll()">Select All</button>
+        <button type="button" onclick="deselectAll()">Deselect All</button>
+        <div id="mulSelect"></div>
+        <div class="small">(If none selected → normal range used)</div>
+    </div>
+
+    <button type="button" onclick="generate()" class="full">Refresh / Generate</button>
+    <button type="button" onclick="checkAll()" class="full">Check All</button>
+    <button type="button" onclick="clearAll()" class="full">Clear All</button>
+</div>
+
+<div id="output"></div>
+</div>
+
+<script>
+let allPairs = [];
+let usedResults = new Set();
+let sequentialIndex = 0;
+
+function buildMulSelectors(start, end) {
+    const box = document.getElementById("mulSelect");
+    box.innerHTML = "";
+    for (let i = start; i <= end; i++) {
+        box.innerHTML += `
+            <label>
+                <input type="checkbox" value="${i}"> ${i}
+            </label>
+        `;
+    }
+}
+
+function selectAll() { document.querySelectorAll("#mulSelect input").forEach(cb => cb.checked = true); }
+function deselectAll() { document.querySelectorAll("#mulSelect input").forEach(cb => cb.checked = false); }
+
+function clearAll() {
+    document.getElementById("output").innerHTML = "";
+    usedResults.clear();
+    sequentialIndex = 0;
+}
+
+function generatePairs(t1, t2, muls) {
+    const arr = [];
+    for (let t = t1; t <= t2; t++) {
+        for (let m of muls) {
+            arr.push({ t, m, r: t * m });
+        }
+    }
+    return arr;
+}
+
+function generate() {
+    clearAll();
+
+    const t1 = Number(document.getElementById("tableStart").value);
+    const t2 = Number(document.getElementById("tableEnd").value) || t1;
+    const m1 = Number(document.getElementById("mulStart").value);
+    const m2 = Number(document.getElementById("mulEnd").value);
+    const count = Number(document.getElementById("countInput").value);
+
+    const mode = document.getElementById("modeSelect").value;
+    const duplication = document.getElementById("duplicationSelect").value;
+
+    if (!t1 || !m1 || !m2 || m2 < m1) {
+        alert("Invalid input values");
+        return;
+    }
+
+    const selected = [...document.querySelectorAll("#mulSelect input:checked")].map(x => Number(x.value));
+    const mulList = selected.length ? selected : Array.from({ length: m2 - m1 + 1 }, (_, i) => i + m1);
+
+    allPairs = generatePairs(t1, t2, mulList);
+
+    for (let i = 0; i < count; i++) {
+        let pair;
+
+        if (mode === "sequential") {
+            pair = allPairs[sequentialIndex % allPairs.length];
+            sequentialIndex++;
+        } else {
+            const available = allPairs.filter(p => !usedResults.has(p.r));
+            if (duplication === "no" && available.length) {
+                pair = available[Math.floor(Math.random() * available.length)];
+            } else {
+                pair = allPairs[Math.floor(Math.random() * allPairs.length)];
+            }
+        }
+
+        usedResults.add(pair.r);
+        renderQuestion(pair.r);
+    }
+}
+
+function renderQuestion(result) {
+    const out = document.getElementById("output");
+    const correctPairs = allPairs.filter(p => p.r === result);
+    const multiMode = document.getElementById("multiModeSelect").value;
+
+    out.innerHTML += `
+        <div class="question" data-result="${result}">
+            <strong>Result: ${result}</strong>
+            <div class="answers"></div>
+            <div class="result"></div>
+        </div>
+    `;
+
+    const answersDiv = out.lastElementChild.querySelector(".answers");
+
+    const rowsNeeded = multiMode === "on" && correctPairs.length > 1 ? correctPairs.length : 1;
+
+    for (let i = 0; i < rowsNeeded; i++) addAnswerRow(answersDiv);
+}
+
+function addAnswerRow(container) {
+    container.innerHTML += `
+        <div class="answer-row">
+            <span class="row-label">Table:</span>
+            <input type="number" placeholder="Table">
+            <span>×</span>
+            <span class="row-label">Multiplier:</span>
+            <input type="number" placeholder="Multiplier">
+            <button type="button" onclick="checkOne(this)">Check</button>
+        </div>
+    `;
+}
+
+function checkOne(btn) {
+    const row = btn.parentElement;
+    const q = row.closest(".question");
+    const result = Number(q.dataset.result);
+
+    const t = Number(row.children[1].value);
+    const m = Number(row.children[3].value);
+
+    const correctPairs = allPairs.filter(p => p.r === result);
+    const resBox = q.querySelector(".result");
+
+    if (t * m === result) {
+        resBox.textContent = "✅ Correct";
+        resBox.className = "result correct";
+    } else {
+        resBox.innerHTML = "❌ Wrong<br>" +
+            correctPairs.map(p => `${p.t} × ${p.m}`).join(", ");
+        resBox.className = "result wrong";
+    }
+}
+
+function checkAll() { document.querySelectorAll(".answer-row button").forEach(b => b.click()); }
+
+window.onload = () => {
+    const m1 = Number(document.getElementById("mulStart").value) || 1;
+    const m2 = Number(document.getElementById("mulEnd").value) || 10;
+    buildMulSelectors(m1, m2);
+};
+</script>
+</body>
+</html>
