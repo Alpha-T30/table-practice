@@ -201,32 +201,38 @@ function autoUpdateMul() {
 }
 
 
-function generate() {
+ function generate() {
     clearAll();
 
     const t1 = Number(document.getElementById("tableStart").value);
     const t2 = Number(document.getElementById("tableEnd").value) || t1;
-    
-const m1 = Number(document.getElementById("mulStart").value);
-const m2 = Number(document.getElementById("mulEnd").value);
-    const count = Number(document.getElementById("countInput").value);
 
+    let m1 = Number(document.getElementById("mulStart").value);
+    let m2 = Number(document.getElementById("mulEnd").value);
+
+    const count = Number(document.getElementById("countInput").value);
     const mode = document.getElementById("modeSelect").value;
     const duplication = document.getElementById("duplicationSelect").value;
 
-     // DEFAULT to 1–10 if empty
-if (!m1) m1 = 1;
-if (!m2) m2 = 10;
-buildMulSelectors(m1, m2);
+    // ✅ DEFAULT to 1–10 if empty
+    if (!m1) m1 = 1;
+    if (!m2) m2 = 10;
 
+    // ❌ DO NOT rebuild checkbox list here
+    // buildMulSelectors(m1, m2);  <-- REMOVED
 
-if (!t1 || m2 < m1) {
-    alert("Invalid input values");
-    return;
-}
+    if (!t1 || m2 < m1) {
+        alert("Invalid input values");
+        return;
+    }
 
-    const selected = [...document.querySelectorAll("#mulSelect input:checked")].map(x => Number(x.value));
-    const mulList = selected.length ? selected : Array.from({ length: m2 - m1 + 1 }, (_, i) => i + m1);
+    // ✅ Read selected multipliers
+    const selected = [...document.querySelectorAll("#mulSelect input:checked")]
+        .map(cb => Number(cb.value));
+
+    const mulList = selected.length
+        ? selected
+        : Array.from({ length: m2 - m1 + 1 }, (_, i) => i + m1);
 
     allPairs = generatePairs(t1, t2, mulList);
 
@@ -238,6 +244,7 @@ if (!t1 || m2 < m1) {
             sequentialIndex++;
         } else {
             const available = allPairs.filter(p => !usedResults.has(p.r));
+
             if (duplication === "no" && available.length) {
                 pair = available[Math.floor(Math.random() * available.length)];
             } else {
@@ -249,6 +256,7 @@ if (!t1 || m2 < m1) {
         renderQuestion(pair.r);
     }
 }
+
 
 function renderQuestion(result) {
     const out = document.getElementById("output");
