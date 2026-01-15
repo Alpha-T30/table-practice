@@ -269,13 +269,14 @@ function addAnswerRow(container) {
     `;
 }
 
-function checkOne(btn) {
+ function checkOne(btn) {
     const row = btn.parentElement;
     const q = row.closest(".question");
     const result = Number(q.dataset.result);
 
-    const t = Number(row.children[1].value);
-    const m = Number(row.children[3].value);
+    const inputs = row.querySelectorAll("input");
+    const t = Number(inputs[0].value);
+    const m = Number(inputs[1].value);
 
     const correctPairs = allPairs.filter(p => p.r === result);
     const resBox = q.querySelector(".result");
@@ -284,11 +285,13 @@ function checkOne(btn) {
         resBox.textContent = "✅ Correct";
         resBox.className = "result correct";
     } else {
-        resBox.innerHTML = "❌ Wrong<br>" +
+        resBox.innerHTML =
+            "❌ Wrong<br>" +
             correctPairs.map(p => `${p.t} × ${p.m}`).join(", ");
         resBox.className = "result wrong";
     }
 }
+
 
 function checkAll() { document.querySelectorAll(".answer-row button").forEach(b => b.click()); }
 
