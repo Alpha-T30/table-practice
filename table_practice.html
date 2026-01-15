@@ -110,16 +110,16 @@ margin-top : 8px ; }
 <div class="controls">
 
     <label for="tableStart">Table Start (first table number)</label>
-    <input id="tableStart" type="number" placeholder="Table start">
+    <input id="tableStart" type="number" placeholder="Table start" value="1">
 
     <label for="tableEnd">Table End (optional, last table number)</label>
-    <input id="tableEnd" type="number" placeholder="Table end (optional)">
+    <input id="tableEnd" type="number" placeholder="Table end (optional)" value="10">
 
-    <label for="mulStart">Multiplier Start</label>
-    <input id="mulStart" type="number" placeholder="Multiply from">
+    <label for="mulStart">Multiplier Start</label> 
+<input id="mulStart" type="number" placeholder="Multiply from" oninput="autoUpdateMul()" value="1">
 
     <label for="mulEnd">Multiplier End</label>
-    <input id="mulEnd" type="number" placeholder="Multiply to">
+    <input id="mulEnd" type="number" placeholder="Multiply to" oninput="autoUpdateMul()" value="10">
 
     <label for="modeSelect">Mode</label>
     <select id="modeSelect">
@@ -194,22 +194,36 @@ function generatePairs(t1, t2, muls) {
     return arr;
 }
 
+function autoUpdateMul() {
+    const m1 = Number(document.getElementById("mulStart").value) || 1;
+    const m2 = Number(document.getElementById("mulEnd").value) || 10;
+    if (m2 >= m1) buildMulSelectors(m1, m2);
+}
+
+
 function generate() {
     clearAll();
 
     const t1 = Number(document.getElementById("tableStart").value);
     const t2 = Number(document.getElementById("tableEnd").value) || t1;
-    const m1 = Number(document.getElementById("mulStart").value);
-    const m2 = Number(document.getElementById("mulEnd").value);
+    
+const m1 = Number(document.getElementById("mulStart").value);
+const m2 = Number(document.getElementById("mulEnd").value);
     const count = Number(document.getElementById("countInput").value);
 
     const mode = document.getElementById("modeSelect").value;
     const duplication = document.getElementById("duplicationSelect").value;
 
-    if (!t1 || !m1 || !m2 || m2 < m1) {
-        alert("Invalid input values");
-        return;
-    }
+     // DEFAULT to 1–10 if empty
+if (!m1) m1 = 1;
+if (!m2) m2 = 10;
+buildMulSelectors(m1, m2);
+
+
+if (!t1 || m2 < m1) {
+    alert("Invalid input values");
+    return;
+}
 
     const selected = [...document.querySelectorAll("#mulSelect input:checked")].map(x => Number(x.value));
     const mulList = selected.length ? selected : Array.from({ length: m2 - m1 + 1 }, (_, i) => i + m1);
